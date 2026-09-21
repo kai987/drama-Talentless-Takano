@@ -1,9 +1,11 @@
 import { STORAGE_KEY, defaults, loadStore, saveStore, sanitizeStore, toggleId, parseRoute, validateLesson, escapeHTML as e } from './core.js';
 import { shell, settingsDialog, termList, resultCount, episodeURL } from './views.js';
 import { icon } from './icons.js';
+import { buildKnowledgeIndex } from './search.js';
+import { createGlobalSearch } from './search-ui.js';
 const app = document.querySelector('#app');
 const dialogRoot = document.querySelector('#dialog-root');
-let c, toastTimer, noteTimer, returnFocus;
+let c, toastTimer, noteTimer, returnFocus, globalSearch;
 function toast(text) { const node = document.querySelector('#toast'); node.textContent = text; node.classList.add('visible'); clearTimeout(toastTimer); toastTimer = setTimeout(() => node.classList.remove('visible'), 4000); }
 function storage() { try { return window.localStorage; } catch { return { getItem: () => { throw new Error('Storage blocked'); }, setItem: () => { throw new Error('Storage blocked'); } }; } }
 function persist() { if (!saveStore(storage(), c.store)) toast('浏览器未允许保存数据。本次更改仍可使用，请导出记录备份。'); }
@@ -34,6 +36,7 @@ function focusDescriptor() {
 function render(preserve = true) {
   const scroll = window.scrollY, focus = preserve ? focusDescriptor() : null;
   app.innerHTML = shell(c);
+  globalSearch?.mount(app.querySelector('.topbar'));
   applyPreferences();
   const lesson = c.lessons.get(c.route.id);
   document.title = `${c.route.view === 'episodes' ? '全剧课程' : c.route.view === 'saved' ? '我的收藏' : `第${Number(c.route.id)}集${lesson ? ` · ${lesson.title}` : ' · 待整理'}`} | 無能の鷹`;
@@ -48,12 +51,21 @@ function refreshList() {
   document.querySelector('#results-count').textContent = resultCount(c, visibleTerms());
 }
 function resetFilters() { c.query = ''; c.category = 'all'; c.filter = 'all'; c.expandAll = false; }
+function jumpToTerm(id) {
+  if (!c.termMap.has(id)) return;
+  globalSearch?.close();
+  resetFilters();
+  c.expanded.add(id);
+  const next = episodeURL(id.split('-')[0], 'read', id);
+  if (location.hash === next) onRoute(); else location.hash = next;
+}
 function beginReview() {
   const terms = c.lessons.get(c.route.id)?.terms || [];
   const pending = terms.filter(t => !c.store.mastered.includes(t.id));
   c.review = { queue: (pending.length ? pending : terms).map(t => t.id), index: 0, flipped: false };
 }
 function onRoute() {
+  globalSearch?.close();
   window.speechSynthesis?.cancel();
   const previous = c.route;
   c.route = parseRoute(location.hash, c.registry);
@@ -123,9 +135,7 @@ function bindEvents() {
     const button = event.target.closest('[data-action]'); if (!button || !c) return;
     const action = button.dataset.action, id = button.dataset.id;
     if (action === 'jump') {
-      event.preventDefault(); resetFilters(); c.expanded.add(id);
-      const next = episodeURL(id.split('-')[0], 'read', id);
-      if (location.hash === next) onRoute(); else location.hash = next;
+      event.preventDefault(); jumpToTerm(id);
       return;
     }
     switch (action) {
@@ -187,6 +197,7 @@ async function start() {
   const loaded = loadStore(storage(), termMap.keys());
   c = { registry, lessons, allTerms, termMap, store: loaded.store, route: parseRoute(location.hash, registry), query: '', category: 'all', filter: 'all', expanded: new Set([`${registry.defaultEpisode}-01`]), expandAll: false, hideAnswers: false, review: { queue: [], index: 0, flipped: false } };
   if (!location.hash || location.hash === '#main') history.replaceState(null, '', episodeURL(registry.defaultEpisode));
+  globalSearch = createGlobalSearch({ index: buildKnowledgeIndex(registry, lessons), onSelect: jumpToTerm });
   bindEvents();
   if (c.route.tab === 'review') beginReview();
   if (c.route.term) c.expanded.add(c.route.term);
