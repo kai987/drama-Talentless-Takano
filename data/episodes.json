@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "seriesTitle": "無能の鷹",
+  "seriesSubtitle": "IT职场日语学习笔记",
+  "defaultEpisode": "04",
+  "source": "https://www.tv-asahi.co.jp/muno_no_taka/story/0008/",
+  "episodes": [
+    {"id":"01","number":1,"title":"学习内容待整理","status":"planned"},
+    {"id":"02","number":2,"title":"学习内容待整理","status":"planned"},
+    {"id":"03","number":3,"title":"学习内容待整理","status":"planned"},
+    {"id":"04","number":4,"title":"事前准备与团队协作","status":"published","file":"episodes/04.json"},
+    {"id":"05","number":5,"title":"学习内容待整理","status":"planned"},
+    {"id":"06","number":6,"title":"学习内容待整理","status":"planned"},
+    {"id":"07","number":7,"title":"学习内容待整理","status":"planned"},
+    {"id":"08","number":8,"title":"最终集 · 内容待整理","status":"planned"}
+  ]
+}

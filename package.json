@@ -1,0 +1,15 @@
+{
+  "name": "drama-talentless-takano",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A reading-first Japanese/Chinese IT workplace study companion for 無能の鷹.",
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "validate": "node scripts/validate-content.mjs",
+    "build": "npm run validate && node scripts/build.mjs",
+    "preview": "node scripts/serve.mjs dist"
+  },
+  "engines": { "node": ">=20" }
+}

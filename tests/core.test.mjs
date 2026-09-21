@@ -1,0 +1,34 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { mainView } from '../src/views.js';
+import { defaults, filterTerms, normalize, sanitizeStore, loadStore, saveStore, toggleId, escapeHTML, parseRoute, validateLesson } from '../src/core.js';
+const lesson = JSON.parse(await readFile(new URL('../data/episodes/04.json', import.meta.url), 'utf8'));
+const registry = JSON.parse(await readFile(new URL('../data/episodes.json', import.meta.url), 'utf8'));
+const ids = lesson.terms.map(t => t.id), entry = registry.episodes.find(x => x.id === '04');
+test('episode 4 preserves all 18 expressions and 5 interview sentences', () => { assert.equal(lesson.terms.length,18); assert.equal(lesson.highlights.length,5); assert.equal(validateLesson(lesson,entry),true); });
+test('all 8 episodes are listed and published/planned entries are consistent', () => { assert.equal(registry.episodes.length,8); assert.equal(entry.status,'published'); assert.ok(registry.episodes.filter(x => x.status === 'published').every(x => /^episodes\/[\w-]+\.json$/.test(x.file))); assert.ok(registry.episodes.filter(x => x.status === 'planned').every(x => !x.file)); });
+test('search matches kanji, kana, translation and full-width Latin', () => { for(const q of ['認識を合わせる','にんしきを','统一认识','ＡＰＩ']) assert.ok(filterTerms(lesson.terms,{query:q}).some(t => t.id==='04-06')); });
+test('normalization unifies hiragana, katakana and whitespace', () => assert.equal(normalize(' リ ス ケ '),normalize('りすけ')));
+test('search can return empty results', () => assert.equal(filterTerms(lesson.terms,{query:'there-is-no-such-expression'}).length,0));
+test('combined category and caution filters', () => { const result = filterTerms(lesson.terms,{category:'风险预防',filter:'caution'}); assert.deepEqual(result.map(t=>t.id),['04-13','04-14']); });
+test('mastery/bookmark filters are derived from actual state', () => { const s=defaults();s.mastered=['04-01'];s.bookmarks=['04-03'];assert.equal(filterTerms(lesson.terms,{filter:'unmastered'},s).length,17);assert.deepEqual(filterTerms(lesson.terms,{filter:'saved'},s).map(t=>t.id),['04-03']); });
+test('toggle is reversible and does not mutate the input', () => { const a=['04-01'];assert.deepEqual(toggleId(a,'04-02'),['04-01','04-02']);assert.deepEqual(toggleId(a,'04-01'),[]);assert.deepEqual(a,['04-01']); });
+test('safe state import filters unknown IDs, clamps fonts and preserves notes', () => { const s=sanitizeStore({...defaults(),bookmarks:['04-01','04-01','bogus'],fontSize:999,notes:{'04-01':'例句',bad:'bad'},theme:'whatever'},ids);assert.deepEqual(s.bookmarks,['04-01']);assert.deepEqual(s.notes,{'04-01':'例句'});assert.equal(s.fontSize,22);assert.equal(s.theme,'light'); });
+test('unsupported imports and malformed JSON cannot silently overwrite progress', () => assert.throws(()=>sanitizeStore({version:900},ids)));
+test('blocked browser storage degrades gracefully', () => { const storage={getItem(){throw new Error('blocked')},setItem(){throw new Error('blocked')}};assert.equal(loadStore(storage,ids).error,true);assert.equal(saveStore(storage,defaults()),false); });
+test('storage round trip preserves bookmarks and mastery', () => { let value;const storage={getItem:()=>value,setItem:(_,x)=>value=x};const s={...defaults(),bookmarks:['04-01'],mastered:['04-02']};assert.equal(saveStore(storage,s),true);assert.deepEqual(loadStore(storage,ids).store,s); });
+test('corrupt stored JSON is detected', () => assert.equal(loadStore({getItem:()=>'{bad'},ids).error,true));
+test('routes support direct links, review, planned episodes and fallback', () => { assert.equal(parseRoute('#/episode/04?tab=review',registry).tab,'review');assert.equal(parseRoute('#/episode/04?term=04-06',registry).term,'04-06');assert.equal(parseRoute('#/episode/02',registry).id,'02');assert.equal(parseRoute('#/episode/99',registry).id,'04');assert.equal(parseRoute('#/saved',registry).view,'saved'); });
+test('HTML is escaped before rendering data or personal notes', () => assert.equal(escapeHTML('<script>"&\'</script>'),'&lt;script&gt;&quot;&amp;&#39;&lt;/script&gt;'));
+test('duplicate expression IDs are rejected', () => { const changed=structuredClone(lesson);changed.terms.push(changed.terms[0]);assert.throws(()=>validateLesson(changed,entry)); });
+test('invalid highlight references and unsafe source URLs are rejected', () => { const a=structuredClone(lesson);a.highlights[0].termId='bad';assert.throws(()=>validateLesson(a,entry));const b=structuredClone(lesson);b.sources[0].url='javascript:alert(1)';assert.throws(()=>validateLesson(b,entry)); });
+test('no transcript claim, fabricated JLPT levels or missing translations', () => { assert.ok(lesson.notice.includes('不是逐字字幕'));assert.ok(lesson.terms.every(t=>t.sourceType==='learning-adaptation'&&!('jlpt' in t)&&t.work.every(p=>p.ja&&p.zh))); });
+
+test('reader and pending states derive counts from current lesson data', () => {
+  const shorter=structuredClone(lesson);shorter.highlights=shorter.highlights.slice(0,2);
+  const c={registry,route:{view:'episode',id:'04',tab:'read'},lessons:new Map([['04',shorter]]),store:defaults(),expanded:new Set(),query:'',category:'all',filter:'all'};
+  assert.ok(mainView(c).includes('练习2句面试表达'));
+  c.lessons.set('05',{...shorter,id:'05'});c.route.id='02';
+  assert.ok(mainView(c).includes('目前已有2集学习材料。'));
+});
