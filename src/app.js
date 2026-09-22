@@ -3,9 +3,10 @@ import { shell, settingsDialog, termList, resultCount, episodeURL } from './view
 import { icon } from './icons.js';
 import { buildKnowledgeIndex } from './search.js';
 import { createGlobalSearch } from './search-ui.js';
+import { createSpeechController } from './speech.js';
 const app = document.querySelector('#app');
 const dialogRoot = document.querySelector('#dialog-root');
-let c, toastTimer, noteTimer, returnFocus, globalSearch;
+let c, toastTimer, noteTimer, returnFocus, globalSearch, speechController;
 function toast(text) { const node = document.querySelector('#toast'); node.textContent = text; node.classList.add('visible'); clearTimeout(toastTimer); toastTimer = setTimeout(() => node.classList.remove('visible'), 4000); }
 function storage() { try { return window.localStorage; } catch { return { getItem: () => { throw new Error('Storage blocked'); }, setItem: () => { throw new Error('Storage blocked'); } }; } }
 function persist() { if (!saveStore(storage(), c.store)) toast('浏览器未允许保存数据。本次更改仍可使用，请导出记录备份。'); }
@@ -38,6 +39,7 @@ function render(preserve = true) {
   app.innerHTML = shell(c);
   globalSearch?.mount(app.querySelector('.topbar'));
   applyPreferences();
+  syncSpeechButtons();
   const lesson = c.lessons.get(c.route.id);
   document.title = `${c.route.view === 'episodes' ? '全剧课程' : c.route.view === 'saved' ? '我的收藏' : `第${Number(c.route.id)}集${lesson ? ` · ${lesson.title}` : ' · 待整理'}`} | 無能の鷹`;
   if (focus) document.querySelector(focus)?.focus({ preventScroll: true });
@@ -66,7 +68,7 @@ function beginReview() {
 }
 function onRoute() {
   globalSearch?.close();
-  window.speechSynthesis?.cancel();
+  speechController?.stop();
   const previous = c.route;
   c.route = parseRoute(location.hash, c.registry);
   if (previous.id !== c.route.id || previous.view !== c.route.view || c.route.term) resetFilters();
@@ -85,14 +87,34 @@ async function copy(text) {
     let ok = false; try { ok = document.execCommand('copy'); } catch { /* Clipboard permission is optional. */ } area.remove(); toast(ok ? '已复制' : '复制未获浏览器授权，请选中文字后手动复制。');
   }
 }
-function speak(text) {
-  if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) { toast('此浏览器不支持朗读。可以复制例句到设备的朗读工具。'); return; }
-  const voice = speechSynthesis.getVoices().find(v => /^ja(?:-|_|$)/i.test(v.lang));
-  if (!voice) { toast('当前设备没有可用的日语语音。安装系统日语语音后可使用朗读。'); return; }
-  speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text); utterance.lang = 'ja-JP'; utterance.voice = voice; utterance.rate = 0.88;
-  utterance.onerror = event => { if (!['interrupted', 'canceled'].includes(event.error)) toast('朗读未能启动，请检查设备的语音设置。'); };
-  speechSynthesis.speak(utterance);
+function speechButtonKey(button) {
+  if (!button) return '';
+  if (button.dataset.action === 'highlight-speak') return `highlight:${c.route.id}:${button.dataset.index || ''}`;
+  return `term:${button.dataset.id || ''}:${button.dataset.kind || ''}:${button.dataset.index || ''}`;
+}
+function syncSpeechButtons(state = speechController?.getState() || { key: null, status: 'idle' }) {
+  document.querySelectorAll('[data-action="speak"], [data-action="highlight-speak"]').forEach(button => {
+    if (button.dataset.speechIdleLabel === undefined) {
+      button.dataset.speechIdleLabel = button.getAttribute('aria-label') || button.textContent.trim() || '朗读';
+      button.dataset.speechIdleTitle = button.getAttribute('title') || '';
+    }
+    const status = speechButtonKey(button) === state.key ? state.status : 'idle';
+    const label = status === 'playing' ? '暂停朗读' : status === 'paused' ? '继续朗读' : button.dataset.speechIdleLabel;
+    const image = status === 'playing' ? 'pause' : status === 'paused' ? 'play' : 'volume';
+    const svg = button.querySelector('.icon');
+    if (svg) svg.outerHTML = icon(image);
+    button.dataset.speechState = status;
+    button.setAttribute('aria-label', label);
+    button.setAttribute('aria-pressed', String(status === 'playing'));
+    if (status === 'idle' && !button.dataset.speechIdleTitle) button.removeAttribute('title');
+    else button.setAttribute('title', status === 'idle' ? button.dataset.speechIdleTitle : label);
+  });
+}
+function speak(text, button) {
+  const result = speechController?.toggle({ key: speechButtonKey(button), text, lang: 'ja-JP', rate: 0.88 });
+  if (result?.ok) return;
+  if (result?.reason === 'no-voice') toast('当前设备没有可用的日语语音。安装系统日语语音后可使用朗读。');
+  else toast('此浏览器不支持朗读。可以复制例句到设备的朗读工具。');
 }
 function findText(button) {
   const t = c.termMap.get(button.dataset.id); if (!t) return '';
@@ -154,10 +176,10 @@ function bindEvents() {
       case 'master': if (c.termMap.has(id)) { c.store.mastered = toggleId(c.store.mastered, id); persist(); render(); toast(c.store.mastered.includes(id) ? '已标为掌握，继续保持！' : '已改为未掌握'); } break;
       case 'save-note': { const input = document.getElementById(`note-${id}`); if (input) { clearTimeout(noteTimer); const text = input.value.trim(); if (text) c.store.notes[id] = text; else delete c.store.notes[id]; persist(); toast(text ? '个人例句已保存' : '个人例句已清空'); } break; }
       case 'copy': copy(findText(button)); break;
-      case 'speak': speak(findText(button)); break;
+      case 'speak': speak(findText(button), button); break;
       case 'share': copy(`${location.href.split('#')[0]}${episodeURL(id.split('-')[0], 'read', id)}`); break;
       case 'toggle-answers': c.hideAnswers = !c.hideAnswers; render(); break;
-      case 'highlight-copy': case 'highlight-speak': { const h = c.lessons.get(c.route.id)?.highlights[Number(button.dataset.index)]; if (h) action === 'highlight-copy' ? copy(h.ja) : speak(h.ja); break; }
+      case 'highlight-copy': case 'highlight-speak': { const h = c.lessons.get(c.route.id)?.highlights[Number(button.dataset.index)]; if (h) action === 'highlight-copy' ? copy(h.ja) : speak(h.ja, button); break; }
       case 'flip-review': c.review.flipped = !c.review.flipped; render(); break;
       case 'rate-review': { if (!c.review.flipped) break; const current = c.review.queue[c.review.index]; const known = button.dataset.rating === 'known'; c.store.mastered = known ? [...new Set([...c.store.mastered, current])] : c.store.mastered.filter(x => x !== current); c.review.index++; c.review.flipped = false; persist(); render(); document.querySelector('.review-section h2')?.scrollIntoView({ block: 'start' }); break; }
       case 'restart-review': beginReview(); render(); break;
@@ -176,7 +198,7 @@ function bindEvents() {
   app.addEventListener('toggle', event => { const id = event.target.dataset.term; if (id) event.target.open ? c.expanded.add(id) : c.expanded.delete(id); }, true);
   window.addEventListener('hashchange', onRoute);
   window.addEventListener('storage', event => { if (event.key !== STORAGE_KEY) return; const loaded = loadStore(storage(), c.termMap.keys()); c.store = loaded.store; render(); applyPreferences(); });
-  window.addEventListener('pagehide', () => { if (c) { clearTimeout(noteTimer); saveStore(storage(), c.store); } window.speechSynthesis?.cancel(); });
+  window.addEventListener('pagehide', () => { if (c) { clearTimeout(noteTimer); saveStore(storage(), c.store); } speechController?.stop(); });
   document.addEventListener('keydown', event => {
     if (!document.body.classList.contains('nav-open')) return;
     if (event.key === 'Escape') closeNavigation();
@@ -197,6 +219,13 @@ async function start() {
   const loaded = loadStore(storage(), termMap.keys());
   c = { registry, lessons, allTerms, termMap, store: loaded.store, route: parseRoute(location.hash, registry), query: '', category: 'all', filter: 'all', expanded: new Set([`${registry.defaultEpisode}-01`]), expandAll: false, hideAnswers: false, review: { queue: [], index: 0, flipped: false } };
   if (!location.hash || location.hash === '#main') history.replaceState(null, '', episodeURL(registry.defaultEpisode));
+  speechController = createSpeechController({
+    synthesis: window.speechSynthesis,
+    UtteranceCtor: window.SpeechSynthesisUtterance,
+    selectVoice: voices => voices.find(v => /^ja(?:-|_|$)/i.test(v.lang)),
+    onStateChange: syncSpeechButtons,
+    onError: () => toast('朗读未能启动，请检查设备的语音设置。')
+  });
   globalSearch = createGlobalSearch({ index: buildKnowledgeIndex(registry, lessons), onSelect: jumpToTerm });
   bindEvents();
   if (c.route.tab === 'review') beginReview();
