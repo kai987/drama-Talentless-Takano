@@ -45,7 +45,12 @@
       },
       "question": "仕事で意識していることは何ですか？",
       "tip": "回答时补充「发现了什么风险、采取什么措施、结果如何」，比只说自己有风险意识更具体。",
-      "sourceType": "learning-adaptation"
+      "sourceType": "learning-adaptation",
+      "jlptRef": {
+        "label": "N1～N2",
+        "kind": "jlpt",
+        "note": "惯用表达「手を打つ」的整体理解难度参考。"
+      }
     },
     {
       "id": "04-02",
@@ -75,7 +80,12 @@
       },
       "question": "時間が限られているとき、どう優先順位をつけますか？",
       "tip": "与MVP的范围控制思路有相通之处，但「必要最低限」本身不等于MVP。共享信息时也不能省略风险和关键限制。",
-      "sourceType": "learning-adaptation"
+      "sourceType": "learning-adaptation",
+      "jlptRef": {
+        "label": "N2",
+        "kind": "jlpt",
+        "note": "作为商务组合表达记忆。"
+      }
     },
     {
       "id": "04-03",
@@ -105,7 +115,12 @@
       },
       "question": "チーム内の情報共有で気をつけていることは何ですか？",
       "tip": "Cc的作用是知情，不代表对方已经同意，也不等于责任自动转移。需要确认或审批时，应明确提出请求。",
-      "sourceType": "learning-adaptation"
+      "sourceType": "learning-adaptation",
+      "jlptRef": {
+        "label": "职场用语（等级外）",
+        "kind": "workplace",
+        "note": "邮件实务表达，不宜硬套JLPT等级。"
+      }
     },
     {
       "id": "04-04",
@@ -135,7 +150,12 @@
       },
       "question": "チームで仕事を進めるときに大切にしていることは何ですか？",
       "tip": "可以补充共享渠道、共享内容和确认方式。发出消息并不代表对方一定理解了。",
-      "sourceType": "learning-adaptation"
+      "sourceType": "learning-adaptation",
+      "jlptRef": {
+        "label": "N2",
+        "kind": "jlpt",
+        "note": "重点同时掌握「〜ておく」的事前准备语感。"
+      }
     },
     {
       "id": "04-05",
@@ -165,7 +185,12 @@
       },
       "question": "意見が分かれたとき、どう調整しますか？",
       "tip": "面试中可具体说明「提前听取意见、确认限制条件、整理方案」。不要把根回し理解为隐瞒信息或绕过正式审批。",
-      "sourceType": "learning-adaptation"
+      "sourceType": "learning-adaptation",
+      "jlptRef": {
+        "label": "N1",
+        "kind": "jlpt",
+        "note": "典型高级职场词汇。"
+      }
     },
     {
       "id": "04-06",
@@ -195,7 +220,12 @@
       },
       "question": "デザイナーやバックエンドと、どのように連携していますか？",
       "tip": "与「話しました」相比，能更明确地表达沟通的目的。不要只写「对齐」，应说清楚对齐了什么。",
-      "sourceType": "learning-adaptation"
+      "sourceType": "learning-adaptation",
+      "jlptRef": {
+        "label": "N2",
+        "kind": "jlpt",
+        "note": "「認識」本身及商务搭配的参考难度。"
+      }
     },
     {
       "id": "04-07",
@@ -225,7 +255,12 @@
       },
       "question": "他部署との調整経験について教えてください。",
       "tip": "作为回答模板使用。只有确实做过相应工作时，才改写为「前職では…していました」。",
-      "sourceType": "learning-adaptation"
+      "sourceType": "learning-adaptation",
+      "jlptRef": {
+        "label": "N2",
+        "kind": "jlpt",
+        "note": "「調整」在商务和IT现场高频。"
+      }
     },
     {
       "id": "04-08",
@@ -255,7 +290,12 @@
       },
       "question": "プレゼンや顧客への説明では、どのような準備をしますか？",
       "tip": "本词是围绕本集事前准备主题拓展的学习表达，不标注为已核实的逐字台词，也不作官方JLPT等级判定。",
-      "sourceType": "learning-adaptation"
+      "sourceType": "learning-adaptation",
+      "jlptRef": {
+        "label": "N1",
+        "kind": "jlpt",
+        "note": "以「想定」为核心的商务表达参考。"
+      }
     },
     {
       "id": "04-09",
@@ -285,7 +325,12 @@
       },
       "question": "スケジュールの変更が必要になったとき、どう対応しますか？",
       "tip": "原计划延期应说明原因、影响和候选时间。「リスケ」不表示只往后延，也可能提前或换到其他时间。",
-      "sourceType": "learning-adaptation"
+      "sourceType": "learning-adaptation",
+      "jlptRef": {
+        "label": "外来职场词（等级外）",
+        "kind": "workplace",
+        "note": "来自 reschedule 的职场缩略语。"
+      }
     },
     {
       "id": "04-10",
@@ -315,7 +360,12 @@
       },
       "question": "引き継ぎで気をつけていることは何ですか？",
       "tip": "向公司外部人士提到本公司同事时，通常不用「さん」。同时要确认代理人的权限和需要回报的事项。",
-      "sourceType": "learning-adaptation"
+      "sourceType": "learning-adaptation",
+      "jlptRef": {
+        "label": "N2",
+        "kind": "jlpt",
+        "note": "「代理」「対応」均是职场高频词。"
+      }
     },
     {
       "id": "04-11",
@@ -345,7 +395,12 @@
       },
       "question": "会議の進行やチームの取りまとめをした経験はありますか？",
       "tip": "较正式地描述职责时，可说「進行を担当する」「取りまとめる」。不要把参与会议说成主持会议。",
-      "sourceType": "learning-adaptation"
+      "sourceType": "learning-adaptation",
+      "jlptRef": {
+        "label": "N1～N2",
+        "kind": "jlpt",
+        "note": "「主持、统筹」这一抽象义的难度参考。"
+      }
     },
     {
       "id": "04-12",
@@ -375,7 +430,12 @@
       },
       "question": "異なる立場の人と仕事をするとき、何を意識しますか？",
       "tip": "避免只说「私はうまく立ち回れます」。改为介绍如何理解需求、沟通风险和提出替代方案。",
-      "sourceType": "learning-adaptation"
+      "sourceType": "learning-adaptation",
+      "jlptRef": {
+        "label": "N1",
+        "kind": "jlpt",
+        "note": "抽象义「周旋、灵活应对」较高级。"
+      }
     },
     {
       "id": "04-13",
@@ -405,7 +465,12 @@
       },
       "question": "トラブルを防ぐために工夫していることはありますか？",
       "tip": "第一条例句用于理解口语，不是建议在职场照搬。面试中用「未然に防ぐ」描述预防行为更合适。",
-      "sourceType": "learning-adaptation"
+      "sourceType": "learning-adaptation",
+      "jlptRef": {
+        "label": "惯用语（等级不固定）",
+        "kind": "workplace",
+        "note": "日常口语比JLPT词表属性更强。"
+      }
     },
     {
       "id": "04-14",
@@ -435,7 +500,12 @@
       },
       "question": "決定事項はどのように管理していますか？",
       "tip": "不要在面试中用这句话直接抱怨前上司。可以客观说明自己如何确认共识、记录决策和及时汇报。",
-      "sourceType": "learning-adaptation"
+      "sourceType": "learning-adaptation",
+      "jlptRef": {
+        "label": "N1以上语感",
+        "kind": "jlpt",
+        "note": "高级比喻惯用语，不表示JLPT官方存在“N1以上”等级。"
+      }
     },
     {
       "id": "04-15",
@@ -465,7 +535,12 @@
       },
       "question": "仕様変更や情報の共有漏れを防ぐために、何をしていますか？",
       "tip": "Slack和Jira是示例工具，可替换为你真实使用的工具。建议同时记录背景、决定、负责人和日期。",
-      "sourceType": "learning-adaptation"
+      "sourceType": "learning-adaptation",
+      "jlptRef": {
+        "label": "N3～N2",
+        "kind": "jlpt",
+        "note": "「記録」本身较基础，职场搭配更偏N2语感。"
+      }
     },
     {
       "id": "04-16",
@@ -496,7 +571,12 @@
       },
       "question": "今後のキャリアプランを教えてください。",
       "tip": "「出世したい」并非语法错误，但只说想升职缺少具体内容。可以说明想承担的职责和计划提升的能力。",
-      "sourceType": "learning-adaptation"
+      "sourceType": "learning-adaptation",
+      "jlptRef": {
+        "label": "N2",
+        "kind": "jlpt",
+        "note": "常见职业与升迁相关词汇。"
+      }
     },
     {
       "id": "04-17",
@@ -526,7 +606,12 @@
       },
       "question": "期待した結果が出なかったとき、どう受け止めますか？",
       "tip": "可以如实描述困难，再说明反思和行动。不要为了显得积极而虚构成果或否认真实感受。",
-      "sourceType": "learning-adaptation"
+      "sourceType": "learning-adaptation",
+      "jlptRef": {
+        "label": "N1",
+        "kind": "jlpt",
+        "note": "「努力が報われる」是常见搭配。"
+      }
     },
     {
       "id": "04-18",
@@ -556,7 +641,12 @@
       },
       "question": "自分では変えられない制約がある場合、どう進めますか？",
       "tip": "避免说「会社には期待していません」。接受限制不等于忽视问题，仍然可以沟通风险、提出改善建议。",
-      "sourceType": "learning-adaptation"
+      "sourceType": "learning-adaptation",
+      "jlptRef": {
+        "label": "N1",
+        "kind": "jlpt",
+        "note": "抽象义和语境判断较高级。"
+      }
     }
   ],
   "highlights": [
@@ -614,5 +704,6 @@
       "ja": "重要事項を記録に残す",
       "zh": "让决定、背景和下一步行动能够被追溯。"
     }
-  ]
+  ],
+  "jlptNotice": "JLPT官方并未公布完整的现行词汇分级表。本页的N1/N2等标记仅作为学习难度参考，依据常见教材、题库语感与职场使用难度整理，不是官方定级；“等级外/等级不固定”表示更适合作为真实职场或惯用表达学习。"
 }

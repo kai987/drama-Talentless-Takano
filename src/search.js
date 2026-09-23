@@ -18,6 +18,8 @@ export function buildKnowledgeIndex(registry, lessons) {
       term.collocations.forEach(text => add(text, 55, '常用搭配', 'ja'));
       add(term.category, 45, '主题');
       add(term.usage, 40, '使用场景');
+      add(term.jlptRef?.label, 60, term.jlptRef?.kind === 'jlpt' ? 'JLPT参考' : '职场分类');
+      add(term.jlptRef?.note, 25, '等级说明');
       add(episode, 25, '所属集数');
       add(term.explanation, 30, '用法说明');
       add(term.question, 30, '面试问题', 'ja');

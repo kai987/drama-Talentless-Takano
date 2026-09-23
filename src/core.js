@@ -13,7 +13,7 @@ export function filterTerms(terms, { query = '', category = 'all', filter = 'all
     if (filter === 'caution' && !['语气注意', '理解即可'].includes(t.usage)) return false;
     if (filter === 'unmastered' && store.mastered.includes(t.id)) return false;
     if (filter === 'saved' && !store.bookmarks.includes(t.id)) return false;
-    return !q || normalize([t.term, t.reading, t.meaning, t.category, t.explanation, ...t.collocations, ...t.work.flatMap(x => [x.ja, x.zh]), t.interview.ja, t.interview.zh].join(' ')).includes(q);
+    return !q || normalize([t.term, t.reading, t.meaning, t.category, t.explanation, t.jlptRef?.label || '', t.jlptRef?.note || '', ...t.collocations, ...t.work.flatMap(x => [x.ja, x.zh]), t.interview.ja, t.interview.zh].join(' ')).includes(q);
   });
 }
 export function sanitizeStore(raw, validIds) {
@@ -61,6 +61,7 @@ export function validateLesson(lesson, entry) {
     ids.add(t.id);
     for (const key of ['term', 'reading', 'meaning', 'category', 'explanation', 'tip', 'question']) if (typeof t[key] !== 'string' || !t[key].trim()) throw new Error(`${t.id} 缺少 ${key}`);
     if (!USAGES.includes(t.usage) || t.sourceType !== 'learning-adaptation' || !pair(t.interview) || !Array.isArray(t.work) || !t.work.length || !t.work.every(pair) || !Array.isArray(t.collocations) || !t.collocations.length || !t.collocations.every(x => typeof x === 'string')) throw new Error(`${t.id} 用例或来源标记无效`);
+    if (!t.jlptRef || !['jlpt', 'workplace'].includes(t.jlptRef.kind) || typeof t.jlptRef.label !== 'string' || !t.jlptRef.label.trim() || typeof t.jlptRef.note !== 'string' || !t.jlptRef.note.trim()) throw new Error(`${t.id} 缺少有效的JLPT参考信息`);
   }
   if (!lesson.highlights.every(h => ids.has(h.termId) && pair(h) && typeof h.question === 'string' && typeof h.prompt === 'string')) throw new Error('面试重点引用无效');
   if (!lesson.sources.every(s => typeof s.label === 'string' && typeof s.url === 'string' && /^https:\/\//.test(s.url))) throw new Error('来源链接必须使用HTTPS');

@@ -23,7 +23,8 @@ test('routes support direct links, review, planned episodes and fallback', () =>
 test('HTML is escaped before rendering data or personal notes', () => assert.equal(escapeHTML('<script>"&\'</script>'),'&lt;script&gt;&quot;&amp;&#39;&lt;/script&gt;'));
 test('duplicate expression IDs are rejected', () => { const changed=structuredClone(lesson);changed.terms.push(changed.terms[0]);assert.throws(()=>validateLesson(changed,entry)); });
 test('invalid highlight references and unsafe source URLs are rejected', () => { const a=structuredClone(lesson);a.highlights[0].termId='bad';assert.throws(()=>validateLesson(a,entry));const b=structuredClone(lesson);b.sources[0].url='javascript:alert(1)';assert.throws(()=>validateLesson(b,entry)); });
-test('no transcript claim, fabricated JLPT levels or missing translations', () => { assert.ok(lesson.notice.includes('不是逐字字幕'));assert.ok(lesson.terms.every(t=>t.sourceType==='learning-adaptation'&&!('jlpt' in t)&&t.work.every(p=>p.ja&&p.zh))); });
+test('JLPT references are explicit, non-official references and translations remain complete', () => { assert.ok(lesson.notice.includes('不是逐字字幕'));assert.ok(lesson.jlptNotice.includes('不是官方定级'));assert.ok(lesson.terms.every(t=>t.sourceType==='learning-adaptation'&&!('jlpt' in t)&&t.jlptRef?.label&&t.jlptRef?.note&&t.work.every(p=>p.ja&&p.zh)));assert.equal(lesson.terms.filter(t=>t.jlptRef.label.includes('N1')).length,8);assert.equal(lesson.terms.filter(t=>t.jlptRef.label.includes('N2')).length,9); });
+test('episode search can find JLPT reference labels', () => { assert.ok(filterTerms(lesson.terms,{query:'N1'}).some(t=>t.id==='04-05'));assert.ok(filterTerms(lesson.terms,{query:'职场用语'}).some(t=>t.id==='04-03')); });
 
 test('reader and pending states derive counts from current lesson data', () => {
   const shorter=structuredClone(lesson);shorter.highlights=shorter.highlights.slice(0,2);
