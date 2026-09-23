@@ -1,0 +1,30 @@
+/* Grammar extends the existing reading system, without replacing its palette. */
+.study-tabs { gap: clamp(16px, 2.2vw, 29px); }
+.study-tabs a { white-space: nowrap; }
+.grammar-intro { display:flex; gap:20px; justify-content:space-between; align-items:center; margin:2px 0 18px; }
+.grammar-intro h2 { font-size:22px; font-weight:600; line-height:1.7; }
+.grammar-intro p { margin-top:7px; font-size:13px; color:var(--muted); line-height:1.9; }
+.grammar-intro .secondary-button { flex-shrink:0; }
+.grammar-kind { border:1px solid var(--line); color:var(--accent); }
+.grammar-connections > div + div { margin-top:17px; }
+.connection-rule { font-size:var(--reading-size); line-height:1.95; color:var(--accent); overflow-wrap:anywhere; }
+.grammar-connections .translation { font-size:calc(var(--reading-size) - 3px); line-height:1.95; margin-top:6px; color:var(--muted); }
+.grammar-related .text-link { margin-top:12px; }
+.grammar-contrast { padding:18px; margin-bottom:23px; border-left:2px solid var(--accent); background:var(--bg); border-radius:0 6px 6px 0; }
+.grammar-contrast p { font-size:calc(var(--reading-size) - 2px); line-height:1.95; }
+.review-scope { display:flex; gap:12px; align-items:center; color:var(--muted); font-size:13px; margin:20px 0; }
+.review-scope select { padding:9px 12px; border:1px solid var(--line); border-radius:6px; background:var(--surface); min-height:42px; max-width:100%; }
+.review-connection { font-size:15px; line-height:1.9; color:var(--accent); margin-top:18px; }
+.global-result-episode { white-space:nowrap; flex-shrink:0; }
+@media(max-width:700px) {
+ .study-tabs { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+ .study-tabs a { justify-content:center; flex-wrap:wrap; gap:3px; font-size:12px; line-height:1.7; padding:12px 0; }
+ .study-tabs a span { font-size:9px; }
+ .grammar-intro { align-items:flex-start; flex-direction:column; gap:12px; }
+ .grammar-intro h2 { font-size:20px; }
+ .grammar-intro p { font-size:12px; }
+ .grammar-contrast { padding:14px; }
+ .grammar-contrast p { font-size:calc(var(--reading-size) - 2px); }
+ .global-result-heading { gap:8px; }
+ .global-result-heading strong { overflow-wrap:anywhere; min-width:0; }
+}

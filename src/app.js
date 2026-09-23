@@ -1,9 +1,10 @@
-import { STORAGE_KEY, defaults, loadStore, saveStore, sanitizeStore, toggleId, parseRoute, validateLesson, escapeHTML as e } from './core.js';
+import { STORAGE_KEY, defaults, loadStore, saveStore, sanitizeStore, toggleId, parseRoute, validateLesson, lessonItems, reviewItems, escapeHTML as e } from './core.js';
 import { shell, settingsDialog, termList, resultCount, episodeURL } from './views.js';
 import { icon } from './icons.js';
 import { buildKnowledgeIndex } from './search.js';
 import { createGlobalSearch } from './search-ui.js';
 import { createSpeechController } from './speech.js';
+import { attachGrammar, grammarCardText } from './grammar.js';
 const app = document.querySelector('#app');
 const dialogRoot = document.querySelector('#dialog-root');
 let c, toastTimer, noteTimer, returnFocus, globalSearch, speechController;
@@ -45,12 +46,13 @@ function render(preserve = true) {
   if (focus) document.querySelector(focus)?.focus({ preventScroll: true });
   if (preserve) window.scrollTo({ top: scroll, behavior: 'instant' });
 }
-function visibleTerms() { return c.route.view === 'saved' ? c.allTerms.filter(t => c.store.bookmarks.includes(t.id)) : c.lessons.get(c.route.id)?.terms || []; }
+function visibleTerms() { return c.route.view === 'saved' ? c.allTerms.filter(t => c.store.bookmarks.includes(t.id)) : c.route.tab === 'grammar' ? c.lessons.get(c.route.id)?.grammar || [] : c.lessons.get(c.route.id)?.terms || []; }
 function refreshList() {
   const list = document.querySelector('#term-list');
   if (!list) return;
   list.innerHTML = termList(c, visibleTerms());
   document.querySelector('#results-count').textContent = resultCount(c, visibleTerms());
+  syncSpeechButtons();
 }
 function resetFilters() { c.query = ''; c.category = 'all'; c.filter = 'all'; c.expandAll = false; }
 function jumpToTerm(id) {
@@ -62,7 +64,7 @@ function jumpToTerm(id) {
   if (location.hash === next) onRoute(); else location.hash = next;
 }
 function beginReview() {
-  const terms = c.lessons.get(c.route.id)?.terms || [];
+  const terms = reviewItems(c.lessons.get(c.route.id), c.route.scope);
   const pending = terms.filter(t => !c.store.mastered.includes(t.id));
   c.review = { queue: (pending.length ? pending : terms).map(t => t.id), index: 0, flipped: false };
 }
@@ -71,8 +73,8 @@ function onRoute() {
   speechController?.stop();
   const previous = c.route;
   c.route = parseRoute(location.hash, c.registry);
-  if (previous.id !== c.route.id || previous.view !== c.route.view || c.route.term) resetFilters();
-  if (c.route.tab === 'review' && (previous.tab !== 'review' || previous.id !== c.route.id)) beginReview();
+  if (previous.id !== c.route.id || previous.view !== c.route.view || previous.tab !== c.route.tab || c.route.term) resetFilters();
+  if (c.route.tab === 'review' && (previous.tab !== 'review' || previous.id !== c.route.id || previous.scope !== c.route.scope)) beginReview();
   if (c.route.term) c.expanded.add(c.route.term);
   document.body.classList.remove('nav-open');
   render(false);
@@ -119,10 +121,11 @@ function speak(text, button) {
 function findText(button) {
   const t = c.termMap.get(button.dataset.id); if (!t) return '';
   switch (button.dataset.kind) {
+    case 'related': return t.related?.ja || '';
     case 'work': return t.work[Number(button.dataset.index)]?.ja || '';
     case 'interview': return t.interview.ja;
     case 'term': return t.term;
-    default: return `${t.term}（${t.reading}）\n${t.meaning}\n\n${t.explanation}\n\n常用搭配\n${t.collocations.join('\n')}\n\nIT职场用法\n${t.work.map(x => `${x.ja}\n${x.zh}`).join('\n\n')}\n\n面试用法（学习改写）\n${t.interview.ja}\n${t.interview.zh}\n\n使用提醒\n${t.tip}`;
+    default: if (t.type === 'grammar') return grammarCardText(t); return `${t.term}（${t.reading}）\n${t.meaning}\n\n${t.explanation}\n\n常用搭配\n${t.collocations.join('\n')}\n\nIT职场用法\n${t.work.map(x => `${x.ja}\n${x.zh}`).join('\n\n')}\n\n面试用法（学习改写）\n${t.interview.ja}\n${t.interview.zh}\n\n使用提醒\n${t.tip}`;
   }
 }
 function closeDialog() { document.querySelector('#settings-dialog')?.close(); dialogRoot.innerHTML = ''; returnFocus?.focus({ preventScroll: true }); }
@@ -181,8 +184,8 @@ function bindEvents() {
       case 'toggle-answers': c.hideAnswers = !c.hideAnswers; render(); break;
       case 'highlight-copy': case 'highlight-speak': { const h = c.lessons.get(c.route.id)?.highlights[Number(button.dataset.index)]; if (h) action === 'highlight-copy' ? copy(h.ja) : speak(h.ja, button); break; }
       case 'flip-review': c.review.flipped = !c.review.flipped; render(); break;
-      case 'rate-review': { if (!c.review.flipped) break; const current = c.review.queue[c.review.index]; const known = button.dataset.rating === 'known'; c.store.mastered = known ? [...new Set([...c.store.mastered, current])] : c.store.mastered.filter(x => x !== current); c.review.index++; c.review.flipped = false; persist(); render(); document.querySelector('.review-section h2')?.scrollIntoView({ block: 'start' }); break; }
-      case 'restart-review': beginReview(); render(); break;
+      case 'rate-review': { if (!c.review.flipped) break; speechController?.stop(); const current = c.review.queue[c.review.index]; const known = button.dataset.rating === 'known'; c.store.mastered = known ? [...new Set([...c.store.mastered, current])] : c.store.mastered.filter(x => x !== current); c.review.index++; c.review.flipped = false; persist(); render(); document.querySelector('.review-section h2')?.scrollIntoView({ block: 'start' }); break; }
+      case 'restart-review': speechController?.stop(); beginReview(); render(); break;
       case 'export': exportData(); break;
       case 'import': document.querySelector('#import-file')?.click(); break;
     }
@@ -192,6 +195,7 @@ function bindEvents() {
     if (event.target.dataset.note) { const id = event.target.dataset.note; c.store.notes[id] = event.target.value; clearTimeout(noteTimer); noteTimer = setTimeout(persist, 700); }
   });
   document.addEventListener('change', event => {
+    if (event.target.id === 'review-scope') { location.hash = `${episodeURL(c.route.id, 'review')}&scope=${encodeURIComponent(event.target.value)}`; }
     if (event.target.id === 'category-filter') { c.category = event.target.value; refreshList(); }
     if (event.target.id === 'import-file') { importData(event.target.files?.[0]); event.target.value = ''; }
   });
@@ -213,11 +217,13 @@ async function start() {
   const published = registry.episodes.filter(x => x.status === 'published');
   const pairs = await Promise.all(published.map(async entry => {
     if (!/^episodes\/[\w-]+\.json$/.test(entry.file)) throw new Error('无效的课程文件路径');
-    const lesson = await getJSON(new URL(entry.file, dataURL)); validateLesson(lesson, entry); return [entry.id, lesson];
+    if (entry.grammarFile && !/^grammar\/[\w-]+\.json$/.test(entry.grammarFile)) throw new Error('无效的语法文件路径');
+    const [lesson, supplement] = await Promise.all([getJSON(new URL(entry.file, dataURL)), entry.grammarFile ? getJSON(new URL(entry.grammarFile, dataURL)) : undefined]);
+    validateLesson(lesson, entry); return [entry.id, attachGrammar(lesson, supplement)];
   }));
-  const lessons = new Map(pairs), allTerms = pairs.flatMap(([, lesson]) => lesson.terms), termMap = new Map(allTerms.map(t => [t.id, t]));
+  const lessons = new Map(pairs), allTerms = pairs.flatMap(([, lesson]) => lessonItems(lesson)), termMap = new Map(allTerms.map(t => [t.id, t]));
   const loaded = loadStore(storage(), termMap.keys());
-  c = { registry, lessons, allTerms, termMap, store: loaded.store, route: parseRoute(location.hash, registry), query: '', category: 'all', filter: 'all', expanded: new Set([`${registry.defaultEpisode}-01`]), expandAll: false, hideAnswers: false, review: { queue: [], index: 0, flipped: false } };
+  c = { registry, lessons, allTerms, termMap, store: loaded.store, route: parseRoute(location.hash, registry), query: '', category: 'all', filter: 'all', expanded: new Set([`${registry.defaultEpisode}-01`, `${registry.defaultEpisode}-g01`]), expandAll: false, hideAnswers: false, review: { queue: [], index: 0, flipped: false } };
   if (!location.hash || location.hash === '#main') history.replaceState(null, '', episodeURL(registry.defaultEpisode));
   speechController = createSpeechController({
     synthesis: window.speechSynthesis,

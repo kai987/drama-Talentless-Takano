@@ -5,6 +5,9 @@ export const defaults = () => ({ version: 1, theme: 'light', fontSize: 18, chine
 export function normalize(text = '') {
   return String(text).normalize('NFKC').toLowerCase().replace(/[\u30a1-\u30f6]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60)).replace(/\s+/g, '');
 }
+export const lessonItems = lesson => [...(lesson?.terms || []), ...(lesson?.grammar || [])];
+export const reviewItems = (lesson, scope = 'terms') => scope === 'grammar' ? lesson?.grammar || [] : scope === 'all' ? lessonItems(lesson) : lesson?.terms || [];
+
 export function filterTerms(terms, { query = '', category = 'all', filter = 'all' } = {}, store = defaults()) {
   const q = normalize(query);
   return terms.filter(t => {
@@ -13,7 +16,7 @@ export function filterTerms(terms, { query = '', category = 'all', filter = 'all
     if (filter === 'caution' && !['语气注意', '理解即可'].includes(t.usage)) return false;
     if (filter === 'unmastered' && store.mastered.includes(t.id)) return false;
     if (filter === 'saved' && !store.bookmarks.includes(t.id)) return false;
-    return !q || normalize([t.term, t.reading, t.meaning, t.category, t.explanation, t.jlptRef?.label || '', t.jlptRef?.note || '', ...t.collocations, ...t.work.flatMap(x => [x.ja, x.zh]), t.interview.ja, t.interview.zh].join(' ')).includes(q);
+    return !q || normalize([t.term, t.reading, t.meaning, t.category, t.explanation, t.jlptRef?.label || '', t.jlptRef?.note || '', t.type === 'grammar' ? '语法 文法 grammar 接续' : '词汇 表达 vocabulary', ...(t.connections || []).flatMap(p => [p.ja, p.zh]), t.related?.ja || '', t.related?.zh || '', t.contrast || '', ...t.collocations, ...t.work.flatMap(x => [x.ja, x.zh]), t.interview.ja, t.interview.zh].join(' ')).includes(q);
   });
 }
 export function sanitizeStore(raw, validIds) {
@@ -47,8 +50,8 @@ export function parseRoute(hash, registry) {
   if (view === 'episodes' || view === 'saved') return { view, id: null, tab: 'read', term: null };
   const episode = registry.episodes.find(e => e.id === id);
   const params = new URLSearchParams(search);
-  const tab = ['read', 'interview', 'review'].includes(params.get('tab')) ? params.get('tab') : 'read';
-  return { view: 'episode', id: episode ? episode.id : registry.defaultEpisode, tab, term: params.get('term') };
+  const tab = ['read', 'interview', 'grammar', 'review'].includes(params.get('tab')) ? params.get('tab') : 'read';
+  return { view: 'episode', id: episode ? episode.id : registry.defaultEpisode, tab: /^\d{2}-g\d{2}$/.test(params.get('term') || '') ? 'grammar' : tab, term: params.get('term'), scope: ['grammar', 'all'].includes(params.get('scope')) ? params.get('scope') : 'terms' };
 }
 export function validateLesson(lesson, entry) {
   if (lesson.schemaVersion !== 1 || lesson.id !== entry.id || lesson.number !== entry.number) throw new Error(`课程标识不匹配：${entry.id}`);

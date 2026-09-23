@@ -23,7 +23,7 @@ export function searchField(shortcut = 'Ctrl K') {
 
 export function resultMarkup(results, query) {
   return results.map((r, i) => `<li id="global-search-option-${i}" role="option" aria-selected="false" tabindex="-1" data-search-index="${i}">
-    <div class="global-result-heading"><strong lang="ja">${mark(r.term, query)}</strong><span class="global-result-episode">第${r.episodeNumber}集</span></div>
+    <div class="global-result-heading"><strong lang="ja">${mark(r.term, query)}</strong><span class="global-result-episode">第${r.episodeNumber}集 · ${r.type === 'grammar' ? '语法' : '词汇'}</span></div>
     <p class="global-result-reading" lang="ja">${mark(r.reading, query)}</p>
     <p class="global-result-meaning">${mark(r.meaning, query)}</p>
     ${r.context ? `<p class="global-result-context"><span>${e(r.context.label)}</span><span lang="${e(r.context.lang)}">${mark(contextSnippet(r.context.text, query), query)}</span></p>` : ''}

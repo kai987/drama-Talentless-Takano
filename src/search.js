@@ -1,4 +1,4 @@
-import { normalize, escapeHTML } from './core.js';
+import { normalize, escapeHTML, lessonItems } from './core.js';
 
 /** Pure, in-memory search. Only published lesson content is indexed; never personal notes. */
 export function buildKnowledgeIndex(registry, lessons) {
@@ -7,7 +7,7 @@ export function buildKnowledgeIndex(registry, lessons) {
     const lesson = lessons.get(entry.id);
     if (entry.status !== 'published' || !lesson) continue;
     const episode = `第${entry.number}集 第${entry.number}话 第${entry.number}話 第${entry.number}回 ep${entry.number} ep${entry.id} episode${entry.number}`;
-    for (const term of lesson.terms) {
+    for (const term of lessonItems(lesson)) {
       const fields = [];
       const add = (text, weight, label, lang = 'zh-CN') => {
         if (typeof text === 'string' && text.trim()) fields.push({ text, normalized: normalize(text), weight, label, lang });
@@ -17,6 +17,10 @@ export function buildKnowledgeIndex(registry, lessons) {
       add(term.meaning, 80, '中文释义');
       term.collocations.forEach(text => add(text, 55, '常用搭配', 'ja'));
       add(term.category, 45, '主题');
+      add(term.type === 'grammar' ? '语法 文法 grammar' : '词汇 表达 vocabulary', 45, '知识点类型');
+      for (const p of term.connections || []) { add(p.ja, 65, '语法接续', 'ja'); add(p.zh, 40, '接续说明'); }
+      if (term.related) { add(term.related.ja, 45, '相关例句', 'ja'); add(term.related.zh, 35, '相关例句译文'); }
+      add(term.contrast, 30, '易混辨析');
       add(term.usage, 40, '使用场景');
       add(term.jlptRef?.label, 60, term.jlptRef?.kind === 'jlpt' ? 'JLPT参考' : '职场分类');
       add(term.jlptRef?.note, 25, '等级说明');
@@ -31,7 +35,7 @@ export function buildKnowledgeIndex(registry, lessons) {
         add(point.ja, 35, '面试速记', 'ja'); add(point.zh, 30, '面试速记译文');
         add(point.question, 30, '面试问题', 'ja'); add(point.label, 35, '面试重点'); add(point.prompt, 20, '练习提示');
       }
-      records.push({ id: term.id, term: term.term, reading: term.reading, meaning: term.meaning, episodeId: entry.id, episodeNumber: entry.number, episodeTitle: lesson.title, fields });
+      records.push({ id: term.id, type: term.type === 'grammar' ? 'grammar' : 'vocabulary', term: term.term, reading: term.reading, meaning: term.meaning, episodeId: entry.id, episodeNumber: entry.number, episodeTitle: lesson.title, fields });
     }
   }
   return records;
